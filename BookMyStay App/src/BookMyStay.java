@@ -1,37 +1,134 @@
 /**
- * UseCase1HotelBookingApp
+ * UseCase2HotelBookingApp
  *
- * This class represents the entry point of the Book My Stay application.
- * It demonstrates how a Java application starts execution and displays
- * a welcome message to the user.
+ * This application demonstrates basic object-oriented design
+ * using abstraction, inheritance, and polymorphism in a Hotel Booking System.
  *
- * The program prints the application name and version information
- * to the console and then terminates.
+ * It defines different room types and displays their static availability.
+ * The focus is on domain modeling rather than data structures.
  *
- * @author YourName
+ * @author Deepika Ramireddy
  * @version 1.0
  */
+
+// 🔷 Abstract Class
+/**
+ * Abstract class representing a generic Room.
+ * It defines common attributes and behavior shared by all room types.
+ */
+abstract class Room {
+    private int beds;
+    private double size;
+    private double price;
+
+    /**
+     * Constructor to initialize room attributes.
+     */
+    public Room(int beds, double size, double price) {
+        this.beds = beds;
+        this.size = size;
+        this.price = price;
+    }
+
+    /**
+     * Displays room details.
+     */
+    public void displayDetails() {
+        System.out.println("Beds: " + beds);
+        System.out.println("Size: " + size + " sq.ft");
+        System.out.println("Price: $" + price);
+    }
+
+    /**
+     * Abstract method to define room type.
+     */
+    public abstract String getRoomType();
+}
+
+// 🔷 Single Room
+/**
+ * Represents a Single Room type.
+ */
+class SingleRoom extends Room {
+
+    public SingleRoom() {
+        super(1, 200, 50);
+    }
+
+    @Override
+    public String getRoomType() {
+        return "Single Room";
+    }
+}
+
+// 🔷 Double Room
+/**
+ * Represents a Double Room type.
+ */
+class DoubleRoom extends Room {
+
+    public DoubleRoom() {
+        super(2, 350, 90);
+    }
+
+    @Override
+    public String getRoomType() {
+        return "Double Room";
+    }
+}
+
+// 🔷 Suite Room
+/**
+ * Represents a Suite Room type.
+ */
+class SuiteRoom extends Room {
+
+    public SuiteRoom() {
+        super(3, 600, 200);
+    }
+
+    @Override
+    public String getRoomType() {
+        return "Suite Room";
+    }
+}
+
+// 🔷 Main Application Class
 public class BookMyStay {
 
     /**
-     * Main method - Entry point of the application.
-     * JVM starts execution from here.
-     *
-     * @param args Command line arguments (not used here)
+     * Entry point of the application.
      */
     public static void main(String[] args) {
 
-        // Display welcome message
-        System.out.println("====================================");
-        System.out.println("   Welcome to Book My Stay App");
-        System.out.println("====================================");
+        System.out.println("====== Book My Stay App ======");
+        System.out.println("Available Room Types:\n");
 
-        // Display application details
-        System.out.println("Application: Hotel Booking System");
-        System.out.println("Version: 1.0");
+        // 🔹 Static Availability Variables
+        int singleAvailability = 5;
+        int doubleAvailability = 3;
+        int suiteAvailability = 2;
 
-        // Closing message
-        System.out.println("Application started successfully.");
-        System.out.println("Thank you for using Book My Stay!");
+        // 🔹 Polymorphism: Using Room reference
+        Room single = new SingleRoom();
+        Room doubleRoom = new DoubleRoom();
+        Room suite = new SuiteRoom();
+
+        // 🔹 Display Details
+        displayRoom(single, singleAvailability);
+        displayRoom(doubleRoom, doubleAvailability);
+        displayRoom(suite, suiteAvailability);
+
+        System.out.println("\nApplication terminated.");
+    }
+
+    /**
+     * Utility method to display room details and availability.
+     */
+    public static void displayRoom(Room room, int availability) {
+        System.out.println("----------------------------");
+        System.out.println("Room Type: " + room.getRoomType());
+        room.displayDetails();
+        System.out.println("Available Rooms: " + availability);
     }
 }
