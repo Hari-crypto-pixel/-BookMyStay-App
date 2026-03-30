@@ -1,92 +1,111 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-/**
- * UseCase3RoomInventoryApp
- *
- * This application demonstrates centralized inventory management
- * using a HashMap to maintain room availability in a Hotel Booking System.
- *
- * It replaces scattered variables with a single source of truth,
- * improving consistency, scalability, and maintainability.
- *
- * The RoomInventory class encapsulates all inventory-related logic.
- *
- * @author Deepika Ramireddy
- * @version 1.0
- */
+// 🔷 Abstract Room Class
+abstract class Room {
+    private int beds;
+    private double size;
+    private double price;
 
-// 🔷 Inventory Management Class
-/**
- * RoomInventory is responsible for managing room availability.
- * It uses a HashMap to store and update room counts.
- */
+    public Room(int beds, double size, double price) {
+        this.beds = beds;
+        this.size = size;
+        this.price = price;
+    }
+
+    public void displayDetails() {
+        System.out.println("Beds: " + beds);
+        System.out.println("Size: " + size + " sq.ft");
+        System.out.println("Price: $" + price);
+    }
+
+    public abstract String getRoomType();
+}
+
+// 🔷 Room Implementations
+class SingleRoom extends Room {
+    public SingleRoom() { super(1, 200, 50); }
+    public String getRoomType() { return "Single Room"; }
+}
+
+class DoubleRoom extends Room {
+    public DoubleRoom() { super(2, 350, 90); }
+    public String getRoomType() { return "Double Room"; }
+}
+
+class SuiteRoom extends Room {
+    public SuiteRoom() { super(3, 600, 200); }
+    public String getRoomType() { return "Suite Room"; }
+}
+
+// 🔷 Inventory (Read + Write handled separately)
 class RoomInventory {
+    private Map<String, Integer> inventory = new HashMap<>();
 
-    // HashMap to store room type -> availability
-    private Map<String, Integer> inventory;
-
-    /**
-     * Constructor initializes room availability.
-     */
     public RoomInventory() {
-        inventory = new HashMap<>();
-
-        // Initialize room types with counts
         inventory.put("Single Room", 5);
-        inventory.put("Double Room", 3);
+        inventory.put("Double Room", 0); // intentionally unavailable
         inventory.put("Suite Room", 2);
     }
 
-    /**
-     * Get availability for a specific room type.
-     */
+    // Read-only access
     public int getAvailability(String roomType) {
         return inventory.getOrDefault(roomType, 0);
     }
 
-    /**
-     * Update availability for a room type.
-     */
-    public void updateAvailability(String roomType, int newCount) {
-        if (inventory.containsKey(roomType)) {
-            inventory.put(roomType, newCount);
-        } else {
-            System.out.println("Room type not found: " + roomType);
-        }
+    public Set<String> getAllRoomTypes() {
+        return inventory.keySet();
+    }
+}
+
+// 🔷 Search Service (Read-Only)
+class RoomSearchService {
+
+    private RoomInventory inventory;
+    private Map<String, Room> roomCatalog;
+
+    public RoomSearchService(RoomInventory inventory) {
+        this.inventory = inventory;
+
+        // Room domain objects (catalog)
+        roomCatalog = new HashMap<>();
+        roomCatalog.put("Single Room", new SingleRoom());
+        roomCatalog.put("Double Room", new DoubleRoom());
+        roomCatalog.put("Suite Room", new SuiteRoom());
     }
 
     /**
-     * Book a room (decrease count safely).
+     * Displays only available rooms without modifying inventory.
      */
-    public void bookRoom(String roomType) {
-        int current = getAvailability(roomType);
+    public void searchAvailableRooms() {
+        System.out.println("\n------ Available Rooms ------");
 
-        if (current > 0) {
-            inventory.put(roomType, current - 1);
-            System.out.println(roomType + " booked successfully.");
-        } else {
-            System.out.println("No availability for " + roomType);
-        }
-    }
+        for (String type : inventory.getAllRoomTypes()) {
+            int available = inventory.getAvailability(type);
 
-    /**
-     * Display full inventory.
-     */
-    public void displayInventory() {
-        System.out.println("\n------ Current Room Inventory ------");
-        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
+            // 🔴 Validation: Skip unavailable rooms
+            if (available <= 0) continue;
+
+            Room room = roomCatalog.get(type);
+
+            System.out.println("\nRoom Type: " + type);
+            room.displayDetails();
+            System.out.println("Available: " + available);
         }
     }
 }
 
 // 🔷 Main Application
-public class BookMyStay{
+/**
+ * UseCase4RoomSearchApp
+ *
+ * Demonstrates read-only search functionality in a Hotel Booking System.
+ * Ensures safe data access and prevents unintended state modification.
+ *
+ * @author Deepika Ramireddy
+ * @version 1.0
+ */
+public class   BookMyStay {
 
-    /**
-     * Entry point of the application.
-     */
     public static void main(String[] args) {
 
         System.out.println("====== Book My Stay App ======");
@@ -94,23 +113,12 @@ public class BookMyStay{
         // Initialize inventory
         RoomInventory inventory = new RoomInventory();
 
-        // Display initial inventory
-        inventory.displayInventory();
+        // Initialize search service
+        RoomSearchService searchService = new RoomSearchService(inventory);
 
-        // Simulate booking
-        System.out.println("\nBooking a Single Room...");
-        inventory.bookRoom("Single Room");
+        // Perform search (read-only)
+        searchService.searchAvailableRooms();
 
-        // Display updated inventory
-        inventory.displayInventory();
-
-        // Manual update
-        System.out.println("\nUpdating Suite Room availability...");
-        inventory.updateAvailability("Suite Room", 5);
-
-        // Final state
-        inventory.displayInventory();
-
-        System.out.println("\nApplication terminated.");
+        System.out.println("\nSearch completed. No changes made to inventory.");
     }
 }
