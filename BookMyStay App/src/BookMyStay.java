@@ -1,180 +1,131 @@
+
+
 import java.util.*;
 
-// 🔷 Reservation Class
-class Reservation {
-    private String guestName;
-    private String roomType;
+// 🔷 Add-On Service Class
+/**
+ * Represents an optional service that can be added to a reservation.
+ */
+class AddOnService {
+    private String name;
+    private double price;
 
-    public Reservation(String guestName, String roomType) {
-        this.guestName = guestName;
-        this.roomType = roomType;
+    public AddOnService(String name, double price) {
+        this.name = name;
+        this.price = price;
     }
 
-    public String getGuestName() { return guestName; }
-    public String getRoomType() { return roomType; }
+    public double getPrice() {
+        return price;
+    }
 
     @Override
     public String toString() {
-        return guestName + " -> " + roomType;
+        return name + " ($" + price + ")";
     }
 }
 
-// 🔷 Booking Queue (FIFO)
-class BookingQueue {
-    private Queue<Reservation> queue = new LinkedList<>();
-
-    public void addRequest(Reservation r) {
-        queue.offer(r);
-    }
-
-    public Reservation getNextRequest() {
-        return queue.poll(); // removes from queue
-    }
-
-    public boolean isEmpty() {
-        return queue.isEmpty();
-    }
-}
-
-// 🔷 Inventory Service
-class RoomInventory {
-    private Map<String, Integer> inventory = new HashMap<>();
-
-    public RoomInventory() {
-        inventory.put("Single Room", 2);
-        inventory.put("Double Room", 1);
-        inventory.put("Suite Room", 1);
-    }
-
-    public int getAvailability(String roomType) {
-        return inventory.getOrDefault(roomType, 0);
-    }
-
-    public void decrement(String roomType) {
-        inventory.put(roomType, getAvailability(roomType) - 1);
-    }
-
-    public void displayInventory() {
-        System.out.println("\nCurrent Inventory: " + inventory);
-    }
-}
-
-// 🔷 Booking Service (Core Logic)
+// 🔷 Add-On Service Manager
 /**
- * Handles room allocation safely using Set and HashMap.
+ * Manages mapping between reservation IDs and selected services.
  */
-class BookingService {
+class AddOnServiceManager {
 
-    private RoomInventory inventory;
+    // Map: Reservation ID -> List of Services
+    private Map<String, List<AddOnService>> serviceMap = new HashMap<>();
 
-    // Track allocated room IDs globally (uniqueness)
-    private Set<String> allocatedRoomIds = new HashSet<>();
+    /**
+     * Add a service to a reservation.
+     */
+    public void addService(String reservationId, AddOnService service) {
+        serviceMap
+                .computeIfAbsent(reservationId, k -> new ArrayList<>())
+                .add(service);
 
-    // Track allocations per room type
-    private Map<String, Set<String>> roomAllocations = new HashMap<>();
-
-    private int roomCounter = 1;
-
-    public BookingService(RoomInventory inventory) {
-        this.inventory = inventory;
+        System.out.println("Added service " + service + " to " + reservationId);
     }
 
     /**
-     * Process booking queue
+     * Get services for a reservation.
      */
-    public void processBookings(BookingQueue queue) {
+    public List<AddOnService> getServices(String reservationId) {
+        return serviceMap.getOrDefault(reservationId, new ArrayList<>());
+    }
 
-        while (!queue.isEmpty()) {
-            Reservation request = queue.getNextRequest();
+    /**
+     * Calculate total cost of add-on services.
+     */
+    public double calculateTotalCost(String reservationId) {
+        double total = 0;
 
-            System.out.println("\nProcessing: " + request);
-
-            String type = request.getRoomType();
-
-            // 🔴 Check availability
-            if (inventory.getAvailability(type) <= 0) {
-                System.out.println("Booking failed: No rooms available for " + type);
-                continue;
-            }
-
-            // 🔵 Generate unique room ID
-            String roomId = generateRoomId(type);
-
-            // 🟢 Ensure uniqueness using Set
-            if (allocatedRoomIds.contains(roomId)) {
-                System.out.println("Error: Duplicate Room ID detected!");
-                continue;
-            }
-
-            // 🟣 Atomic Allocation
-            allocatedRoomIds.add(roomId);
-
-            roomAllocations
-                    .computeIfAbsent(type, k -> new HashSet<>())
-                    .add(roomId);
-
-            inventory.decrement(type);
-
-            // ✅ Confirm booking
-            System.out.println("Booking Confirmed!");
-            System.out.println("Guest: " + request.getGuestName());
-            System.out.println("Room Type: " + type);
-            System.out.println("Assigned Room ID: " + roomId);
+        for (AddOnService service : getServices(reservationId)) {
+            total += service.getPrice();
         }
+
+        return total;
     }
 
     /**
-     * Generate unique room ID
+     * Display services for a reservation.
      */
-    private String generateRoomId(String roomType) {
-        return roomType.replace(" ", "").substring(0, 2).toUpperCase() + roomCounter++;
-    }
+    public void displayServices(String reservationId) {
+        System.out.println("\nServices for Reservation: " + reservationId);
 
-    /**
-     * Display allocations
-     */
-    public void displayAllocations() {
-        System.out.println("\n------ Room Allocations ------");
-        for (String type : roomAllocations.keySet()) {
-            System.out.println(type + " -> " + roomAllocations.get(type));
+        List<AddOnService> services = getServices(reservationId);
+
+        if (services.isEmpty()) {
+            System.out.println("No add-on services selected.");
+            return;
         }
+
+        for (AddOnService s : services) {
+            System.out.println("- " + s);
+        }
+
+        System.out.println("Total Add-On Cost: $" + calculateTotalCost(reservationId));
     }
 }
 
 // 🔷 Main Application
 /**
- * UseCase6BookingAllocationApp
+ * UseCase7AddOnServicesApp
  *
- * Demonstrates safe booking allocation using Queue, HashMap, and Set.
- * Prevents double booking and ensures inventory consistency.
+ * Demonstrates how optional services can be added to a reservation
+ * without modifying core booking or inventory logic.
+ *
+ * This showcases extensibility using Map + List and composition.
  *
  * @author Deepika Ramireddy
  * @version 1.0
  */
-public class  BookMyStay  {
+public class BookMyStay  {
 
     public static void main(String[] args) {
 
         System.out.println("====== Book My Stay App ======");
 
-        // Initialize components
-        BookingQueue queue = new BookingQueue();
-        RoomInventory inventory = new RoomInventory();
-        BookingService service = new BookingService(inventory);
+        // Simulated reservation IDs (from previous booking system)
+        String res1 = "SI1";
+        String res2 = "SU2";
 
-        // Add booking requests
-        queue.addRequest(new Reservation("Alice", "Single Room"));
-        queue.addRequest(new Reservation("Bob", "Single Room"));
-        queue.addRequest(new Reservation("Charlie", "Single Room")); // should fail
-        queue.addRequest(new Reservation("David", "Suite Room"));
+        // Initialize service manager
+        AddOnServiceManager manager = new AddOnServiceManager();
 
-        // Process bookings
-        service.processBookings(queue);
+        // Create services
+        AddOnService breakfast = new AddOnService("Breakfast", 10);
+        AddOnService wifi = new AddOnService("WiFi", 5);
+        AddOnService airportPickup = new AddOnService("Airport Pickup", 20);
 
-        // Show results
-        service.displayAllocations();
-        inventory.displayInventory();
+        // Add services to reservations
+        manager.addService(res1, breakfast);
+        manager.addService(res1, wifi);
 
-        System.out.println("\nAll bookings processed safely.");
+        manager.addService(res2, airportPickup);
+
+        // Display services
+        manager.displayServices(res1);
+        manager.displayServices(res2);
+
+        System.out.println("\nCore booking and inventory remain unchanged.");
     }
 }
